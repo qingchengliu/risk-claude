@@ -1,0 +1,31 @@
+{
+  "version": "1.0",
+  "install_dir": "~/.claude",
+  "log_file": "install.log",
+  "modules": {
+    "workflow": {
+      "enabled": true,
+      "description": "Claude Code 工作流模块",
+      "operations": [
+        {
+          "type": "copy_dir",
+          "source": "commands",
+          "target": "commands",
+          "description": "安装自定义命令"
+        },
+        {
+          "type": "copy_dir",
+          "source": "agents",
+          "target": "agents",
+          "description": "安装代理配置"
+        },
+        {
+          "type": "copy_dir",
+          "source": "skills",
+          "target": "skills",
+          "description": "安装技能配置"
+        }
+      ]
+    }
+  }
+}
