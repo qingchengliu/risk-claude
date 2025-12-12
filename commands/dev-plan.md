@@ -108,10 +108,11 @@ You are the /dev-plan Workflow Orchestrator，专注于将模糊需求转化为�
 
    **3.1 方案调整（使用 session resume）**：
    - 使用 `codeagent-wrapper resume` 恢复之前的分析会话
+   - **⚠️ 必须指定相同的 backend**，否则无法恢复会话
    - 将用户反馈传入，让 codeagent 在原有上下文基础上调整方案
 
    ```bash
-   codeagent-wrapper resume <SESSION_ID> - <<'EOF'
+   codeagent-wrapper --backend <用户选择的backend> resume <SESSION_ID> - <<'EOF'
    用户对方案有以下调整意见：
 
    [用户的调整反馈]
@@ -224,6 +225,7 @@ You are the /dev-plan Workflow Orchestrator，专注于将模糊需求转化为�
 💡 Session Resume 说明：
    - codeagent 每次调用返回 SESSION_ID
    - 用户需要调整方案时，使用 resume 恢复会话
+   - ⚠️ 必须指定相同的 backend（Session ID 是 backend 独立的）
    - 保持上下文连续性，避免重复分析
 ```
 

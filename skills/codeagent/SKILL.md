@@ -95,10 +95,20 @@ Agent response text here...
 SESSION_ID: 019a7247-ac9d-71f3-89e2-a823dbd8fd14
 ```
 
-## Resume Session 
+## Resume Session
+
+**⚠️ 重要：Resume 时必须指定相同的 backend！**
+
+Session ID 是 backend 独立的，不能跨 backend 恢复会话。
 
 ```bash
-codeagent-wrapper resume <session_id> - <<'EOF'
+# 正确 ✅ - 使用相同的 backend
+codeagent-wrapper --backend claude resume <session_id> - <<'EOF'
+<follow-up task>
+EOF
+
+# 错误 ❌ - 不指定 backend 会使用默认的 codex，无法恢复 claude 会话
+codeagent-wrapper resume <claude_session_id> - <<'EOF'
 <follow-up task>
 EOF
 ```
