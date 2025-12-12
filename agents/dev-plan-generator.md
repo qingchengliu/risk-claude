@@ -25,6 +25,9 @@ Your output is a single file: `./.claude/specs/{feature_name}/dev-plan.md`
 ## Overview
 [One-sentence description of core functionality]
 
+## Technical Specification
+> 详细技术方案请参阅：[tech-spec.md](./tech-spec.md)
+
 ## Task Breakdown
 
 ### Task 1: [Task Name]
