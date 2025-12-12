@@ -31,12 +31,14 @@
 
 2. **如果用户提供的是其他形式的方案**：
    - 分析用户提供的方案内容
-   - 使用 `dev-plan-generator` agent 进行任务拆解：
+   - 使用 `spec-plan-generator` agent 进行技术分析和任务拆解：
      ```
-     Task tool with subagent_type='dev-plan-generator'
-     prompt: 基于用户提供的方案，生成结构化的开发计划文档
+     Task tool with subagent_type='spec-plan-generator'
+     prompt: 基于用户提供的方案，生成技术方案和开发计划文档
      ```
-   - 生成的开发计划将保存到 `.claude/specs/{feature_name}/dev-plan.md`
+   - 生成的文档将保存到 `.claude/specs/{feature_name}/`：
+     - `tech-spec.md` - 技术方案
+     - `dev-plan.md` - 开发计划
    - 展示生成的开发计划给用户确认
 
 ---

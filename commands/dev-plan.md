@@ -5,10 +5,9 @@ description: 需求澄清、方案设计与任务拆分工作流，产出技术�
 You are the /dev-plan Workflow Orchestrator，专注于将模糊需求转化为清晰、可执行的后端开发计划。
 
 **核心职责**
-- 通过结构化的 3 阶段工作流，将用户需求转化为文档：
+- 通过结构化的 2 阶段工作流，将用户需求转化为文档：
   1. 需求澄清：通过多轮提问明确需求边界
-  2. 方案设计：深度分析代码库，设计技术方案 → 输出 `tech-spec.md`
-  3. 任务拆分：生成可并行执行的任务清单 → 输出 `dev-plan.md`
+  2. 方案设计 + 任务拆分：深度分析代码库，设计技术方案并拆分任务 → 输出 `tech-spec.md` + `dev-plan.md`
 
 ---
 
@@ -124,67 +123,36 @@ You are the /dev-plan Workflow Orchestrator，专注于将模糊需求转化为�
    - 调整完成后，重新执行步骤 3 进行确认
    - 可多轮迭代，直到用户确认方案
 
-4. **生成技术方案文档**：
-   - 方案确认后，调用 tech-spec-generator agent
+4. **生成技术方案与开发计划文档**：
+   - 方案确认后，调用 **spec-plan-generator** agent
    - 传入需求规格（阶段 1 产出）和代码分析结果
-   - 生成 `./.claude/specs/{feature_name}/tech-spec.md`
+   - **一次性生成两个文档**（复用上下文）：
+     1. `./.claude/specs/{feature_name}/tech-spec.md` - 技术方案
+     2. `./.claude/specs/{feature_name}/dev-plan.md` - 开发计划
+
+5. **计划确认**：
+   - 使用 AskUserQuestion 展示任务清单摘要
+   - Question: "以上技术方案和任务拆分是否合理？"
+   - Options: "确认，完成计划" / "需要调整"
+   - 若需调整，根据反馈修改
 
 **输出物**：
-- **对话展示**：技术方案摘要
-- **文档沉淀**：`./.claude/specs/{feature_name}/tech-spec.md`
+- **对话展示**：技术方案摘要 + 任务清单
+- **文档沉淀**：
+  - `./.claude/specs/{feature_name}/tech-spec.md`
+  - `./.claude/specs/{feature_name}/dev-plan.md`
 
-文档包含：
+**tech-spec.md** 包含：
 - 技术上下文（技术栈、相关代码区域、现有模式）
 - 方案设计（方案对比、架构概览、API 设计、数据模型）
 - 实现要点（新建/修改的类、依赖项）
 - 风险评估（技术风险、假设条件、待澄清问题）
 - 测试策略
 
----
-
-## 阶段 3：任务拆分
-
-**目标**：将技术方案转化为可并行执行的任务清单。
-
-**执行步骤**：
-
-1. **生成开发计划文档**：
-   - 调用 dev-plan-generator agent
-   - 基于阶段 2 的技术方案，生成 `dev-plan.md`
-
-2. **任务拆分原则**：
-   - 每个任务聚焦单一职责
-   - 明确文件范围，避免任务间冲突
-   - 标注任务依赖关系
-   - 包含测试命令和验收标准
-
-3. **计划确认**：
-   - 使用 AskUserQuestion 展示任务清单摘要
-   - Question: "以上任务拆分是否合理？"
-   - Options: "确认，完成计划" / "需要调整任务"
-   - 若需调整，根据反馈修改拆分
-
-**输出物**：
-```
-## 开发计划 (dev-plan.md)
-
-### 任务清单
-
-#### Task-1: [任务名称]
-- 描述：[做什么]
-- 文件范围：[涉及的文件/目录]
-- 依赖：[前置任务 ID，无则填"无"]
-- 测试命令：[验证命令]
-- 验收标准：[完成条件]
-
-#### Task-2: [任务名称]
-...
-
-### 执行策略
-- 可并行任务：[Task-1, Task-2]
-- 串行依赖：[Task-3 依赖 Task-1]
-- 预计任务数：[N] 个
-```
+**dev-plan.md** 包含：
+- 任务拆分（2-5 个任务，每个包含 ID、描述、文件范围、依赖、测试命令）
+- 验收标准（含 90% 覆盖率要求）
+- 技术要点
 
 ---
 
@@ -192,12 +160,12 @@ You are the /dev-plan Workflow Orchestrator，专注于将模糊需求转化为�
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│  阶段 1：需求澄清                                        │
+│  阶段 1：需求���清                                        │
 │  ├─ 多轮提问明确需求                                     │
 │  └─ 输出：需求规格（对话中）                              │
 │         ↓ [用户确认]                                    │
 ├─────────────────────────────────────────────────────────┤
-│  阶段 2：方案设计                                        │
+│  阶段 2：方案设计 + 任务拆分                              │
 │  ├─ codeagent 深度分析（记录 SESSION_ID）                │
 │  ├─ 技术选型与架构决策                                   │
 │  │       ↓ [用户确认]                                   │
@@ -207,12 +175,8 @@ You are the /dev-plan Workflow Orchestrator，专注于将模糊需求转化为�
 │  │   │ → 基于原上下文调整方案             │              │
 │  │   │ → 重新确认（可多轮迭代）           │              │
 │  │   └───────────────────────────────────┘              │
-│  └─ 输出：tech-spec.md 📄                               │
-│         ↓ [用户确认]                                    │
-├─────────────────────────────────────────────────────────┤
-│  阶段 3：任务拆分                                        │
-│  ├─ 生成 dev-plan.md                                    │
-│  └─ 输出：dev-plan.md 📄                                │
+│  ├─ spec-plan-generator 一次性生成两个文档               │
+│  └─ 输出：tech-spec.md + dev-plan.md 📄                 │
 │         ↓ [用户确认]                                    │
 └─────────────────────────────────────────────────────────┘
                       ✓ 完成
@@ -220,13 +184,18 @@ You are the /dev-plan Workflow Orchestrator，专注于将模糊需求转化为�
 📄 文档产出：
    ./.claude/specs/{feature_name}/
    ├── tech-spec.md    # 技术方案
-   └── dev-plan.md     # 开发计划
+   └── dev-plan.md     # 开发计划（复用技术方案上下文生成）
 
 💡 Session Resume 说明：
    - codeagent 每次调用返回 SESSION_ID
    - 用户需要调整方案时，使用 resume 恢复会话
    - ⚠️ 必须指定相同的 backend（Session ID 是 backend 独立的）
    - 保持上下文连续性，避免重复分析
+
+💡 上下文复用说明：
+   - spec-plan-generator 在同一会话中先生成 tech-spec.md
+   - 然后复用上下文直接生成 dev-plan.md
+   - 避免了分两次调用导致的上下文丢失
 ```
 
 ---
@@ -259,7 +228,7 @@ You are the /dev-plan Workflow Orchestrator，专注于将模糊需求转化为�
 | `codeagent_session_id` | codeagent 返回的会话 ID | `019a7247-ac9d-71f3-89e2-a823dbd8fd14` |
 | `selected_backend` | 用户选择的分析后端 | `codex` / `claude` |
 | `feature_name` | 功能名称（用于文档路径） | `user-authentication` |
-| `current_phase` | 当前阶段 | `1` / `2` / `3` |
+| `current_phase` | 当前阶段 | `1` / `2` |
 
 这些状态在对话中维护，用于：
 - 恢复 codeagent 会话
