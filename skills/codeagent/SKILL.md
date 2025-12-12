@@ -9,6 +9,17 @@ description: Execute codeagent-wrapper for multi-backend AI code tasks. Supports
 
 Execute codeagent-wrapper commands with pluggable AI backends (Codex, Claude, Gemini). Supports file references via `@` syntax and parallel task execution.
 
+## ⚠️ 重要：Bash 超时设置
+
+**启动 codeagent-wrapper 时，必须将 Bash 工具的 timeout 参数设置为 2 小时（7200000 毫秒）**，否则任务可能因超时而中断。
+
+```
+Bash tool parameters:
+- timeout: 7200000  # 2小时，必须设置！
+```
+
+---
+
 ## When to Use
 
 - Complex code analysis requiring deep understanding
