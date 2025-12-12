@@ -13,8 +13,11 @@
 git clone https://github.com/qingchengliu/risk-claude.git
 cd risk-claude
 
-# 安装（需要 Python 3.6+）
-python install.py
+# 安装（需要 Python 3.6+），使用 --force 覆盖已有文件
+python install.py --force
+
+# 如无需覆盖已有文件，可省略 --force
+# python install.py
 
 # 可选：安装 jsonschema 以启用配置验证
 pip install jsonschema

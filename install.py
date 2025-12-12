@@ -249,6 +249,7 @@ def op_merge_dir(op: Dict[str, Any], ctx: Dict[str, Any]) -> None:
     install_dir = ctx["install_dir"]
     force = ctx.get("force", False)
     merged = []
+    skipped = []
 
     for subdir in src.iterdir():
         if not subdir.is_dir():
@@ -259,11 +260,16 @@ def op_merge_dir(op: Dict[str, Any], ctx: Dict[str, Any]) -> None:
             if f.is_file():
                 dst = target_subdir / f.name
                 if dst.exists() and not force:
+                    skipped.append(f"{subdir.name}/{f.name}")
                     continue
                 shutil.copy2(f, dst)
                 merged.append(f"{subdir.name}/{f.name}")
 
     write_log({"level": "INFO", "message": f"Merged {src.name}: {', '.join(merged) or 'no files'}"}, ctx)
+
+    if skipped:
+        print(f"  Skipped {len(skipped)} existing file(s): {', '.join(skipped)}")
+        print("  Hint: Use --force to overwrite existing files")
 
 
 def op_copy_file(op: Dict[str, Any], ctx: Dict[str, Any]) -> None:
@@ -273,6 +279,8 @@ def op_copy_file(op: Dict[str, Any], ctx: Dict[str, Any]) -> None:
     existed_before = dst.exists()
     if existed_before and not ctx.get("force", False):
         write_log({"level": "INFO", "message": f"Skip existing file: {dst}"}, ctx)
+        print(f"  Skipped existing file: {dst.name}")
+        print("  Hint: Use --force to overwrite existing files")
         return
 
     dst.parent.mkdir(parents=True, exist_ok=True)

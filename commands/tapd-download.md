@@ -17,82 +17,19 @@
 
 ---
 
-## 参数交互流程
-
-### 1. 检查 TAPD URL
-
-如果用户没有提供 TAPD URL，使用 AskUserQuestion 工具询问：
-
-```
-请输入 TAPD 需求页面 URL：
-示例: https://www.tapd.cn/tapd_fe/20061171/story/detail/1120061171001406306
-```
-
-**URL 验证规则**:
-- 必须包含 `tapd.cn`
-- 必须包含 `/story/detail/` 或 `/stories/view/`
-
-### 2. 检查 Cookie
-
-如果用户没有提供 Cookie，使用 AskUserQuestion 工具询问：
-
-```
-请输入 TAPD Cookie：
-获取方法: F12 → Network → 任意请求 → Request Headers → Cookie
-必需包含: tapdsession, t_u, t_i_token
-```
-
----
-
-## 输出目录结构
-
-**存储位置**: `./.claude/tapd/`（项目根目录下的 `.claude/tapd/` 文件夹）
-
-```
-.claude/
-└── tapd/
-    ├── TAPD需求_1406306_派单规则新增支持案量金额作为目标结果分配.md
-    └── images/
-        └── TAPD_1406306/
-            ├── img_01.png
-            ├── img_02.png
-            └── ...
-```
-
----
-
-## 输出文件命名规则
-
-**文件名格式**: `TAPD需求_<需求ID>_<需求标题>.md`
-
-**示例**:
-- `TAPD需求_1406306_派单规则新增支持案量金额作为目标结果分配.md`
-- `TAPD需求_1401026_黑产识别声纹识别及相关优化.md`
-
-**标题清理规则**:
-```javascript
-// 移除文件名非法字符和特殊符号
-const safeTitle = title
-  .replace(/[【】\[\]\/\\:*?"<>|]/g, '')  // 移除非法字符
-  .replace(/\s+/g, '')                     // 移除空格
-  .substring(0, 50);                       // 限制长度
-```
-
----
-
 ## 执行流程（7步）
 
-### 步骤0: 前置检查
+### 步骤0: 前置检查 - Playwright MCP
 
-**0.1 检查 Playwright MCP 是否可用**
+在执行任何操作前，检查 Playwright MCP 是否可用。
 
-在执行任何操作前，先检查是否能调用 Playwright MCP 工具（如 `mcp__playwright__browser_navigate`）。
+**检测流程**：
 
-**检测方法**：尝试调用任意 Playwright MCP 工具，如果工具不存在或返回错误，则说明未安装。
+1. **检查工具列表**：首先检查当前可用的工具列表中是否存在 `mcp__playwright__` 前缀的工具
+2. **如果工具列表中没有**：尝试调用 `mcp__playwright__browser_snapshot` 工具
+3. **如果调用失败**（返回 "No such tool available" 或类似错误）：确认 MCP 未安装，向用户显示安装提示
 
-**未安装时的处理**：
-
-如果检测到 Playwright MCP 未安装，**立即停止执行**，并向用户显示以下提示信息：
+**未安装时处理**：
 
 ```
 ❌ 未检测到 Playwright MCP 服务
@@ -106,27 +43,45 @@ const safeTitle = title
 
 3. 重新启动 Claude Code
 4. 再次运行 /tapd-download 命令
-
-安装完成后，Playwright MCP 将作为用户级服务在所有项目中可用。
 ```
 
-**已安装时**：继续执行后续步骤。
+**已安装**：继续下一步。
 
 ---
 
-### 步骤1: 参数检查与交互
+### 步骤1: 参数验证与交互
 
 **1.1 检查 TAPD URL**
 
-如果命令参数中没有提供 URL：
-- 使用 AskUserQuestion 询问用户输入 TAPD 需求 URL
-- 验证 URL 格式是否正确
+如果命令参数中没有提供 URL，使用 AskUserQuestion 询问：
+
+```
+请输入 TAPD 需求页面 URL：
+示例: https://www.tapd.cn/tapd_fe/20061171/story/detail/1120061171001406306
+```
+
+**URL 验证规则**:
+- 必须包含 `tapd.cn`
+- 必须包含 `/story/detail/` 或 `/stories/view/`
+
+验证失败时提示用户重新输入。
 
 **1.2 检查 Cookie**
 
-如果命令参数中没有提供 Cookie：
-- 使用 AskUserQuestion 询问用户输入 Cookie
-- 提示用户 Cookie 获取方法
+如果命令参数中没有提供 Cookie，使用 AskUserQuestion 询问：
+
+```
+请输入 TAPD Cookie：
+获取方法: F12 → Network → 任意请求 → Request Headers → Cookie
+必需包含: tapdsession, t_u, t_i_token
+```
+
+**Cookie 验证规则**:
+- 必须包含 `tapdsession`
+- 必须包含 `t_u`
+- 必须包含 `t_i_token`
+
+验证失败时提示用户补充缺失的 Cookie 字段。
 
 ---
 
@@ -230,7 +185,7 @@ filename: "img_01.png"
 ```
 
 **Cookie 自动携带原理**：
-- 步骤1设置的 Cookie 属于当前浏览器上下文
+- 步骤2设置的 Cookie 属于当前浏览器上下文
 - 导航到 `file.tapd.cn` 时自动携带 `.tapd.cn` 域的 Cookie
 
 **图片保存位置**: `.playwright-mcp/` 目录
@@ -255,6 +210,14 @@ powershell -Command "Copy-Item '.playwright-mcp/img_*.png' -Destination '.claude
 
 文件名：`.claude/tapd/TAPD需求_<需求ID>_<清理后标题>.md`
 
+**标题清理规则**:
+```javascript
+const safeTitle = title
+  .replace(/[【】\[\]\/\\:*?"<>|]/g, '')  // 移除非法字符
+  .replace(/\s+/g, '')                     // 移除空格
+  .substring(0, 50);                       // 限制长度
+```
+
 使用 Write 工具创建，图片路径替换为：
 ```markdown
 ![img_01](./images/TAPD_<需求ID>/img_01.png)
@@ -272,7 +235,7 @@ powershell -Command "Remove-Item '.playwright-mcp/img_*.png' -Force -ErrorAction
 
 ---
 
-## 输出文件结构
+## 输出目录结构
 
 ```
 .claude/
@@ -325,12 +288,12 @@ powershell -Command "Remove-Item '.playwright-mcp/img_*.png' -Force -ErrorAction
 
 ## 图片路径替换
 
-**步骤2 提取结果**（localName 仅为文件名）:
+**步骤3 提取结果**（localName 仅为文件名）:
 ```json
 { "url": "https://file.tapd.cn/abc.png", "localName": "img_01.png" }
 ```
 
-**步骤4 替换时拼接完整相对路径**:
+**步骤5 替换时拼接完整相对路径**:
 ```javascript
 const mdImagePath = `./images/TAPD_${storyId}/${img.localName}`;
 // 结果: ./images/TAPD_1406306/img_01.png
@@ -357,6 +320,9 @@ const mdImagePath = `./images/TAPD_${storyId}/${img.localName}`;
 
 ### Q5: 文件名包含非法字符
 **A**: 标题中的 `【】[]/:*?"<>|` 等字符需移除，空格也建议移除
+
+### Q6: 为什么显示"未检测到 Playwright MCP"？
+**A**: 需要先安装 Playwright MCP 服务，按提示执行安装命令后重启 Claude Code
 
 ---
 
