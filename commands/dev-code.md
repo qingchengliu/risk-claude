@@ -174,6 +174,31 @@ mvn compile -q
 
 ---
 
+## 单元测试规范
+
+### 运行测试
+
+多模块 Maven 项目需从根目录运行测试，避免依赖模块未编译的问题：
+
+```bash
+# 1. 创建临时 testng xml（指定要运行的测试类）
+# 文件路径: {starter-module}/src/test/resources/testng_ut_checkin_temp.xml
+
+# 2. 从根目录运行
+mvn test -DsuiteXmlFile=src/test/resources/testng_ut_checkin_temp.xml
+
+# 3. 测试后删除临时文件（不要提交到 git）
+rm {starter-module}/src/test/resources/testng_ut_checkin_temp.xml
+```
+
+### 编写规范（TestNG + Mockito）
+
+- **@BeforeMethod 重建 SUT**：每个用例全新构造被测类及其 mock 依赖，避免用例间状态污染
+- **静态方法 mock**：使用 `try (MockedStatic<Xxx> m = mockStatic(Xxx.class)) { ... }` 限定作用域
+- **静态配置归位**：在 @BeforeMethod/@AfterMethod 重置静态字段，避免用例间影响
+
+---
+
 ## 使用示例
 
 ```bash
