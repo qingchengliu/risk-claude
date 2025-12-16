@@ -138,3 +138,10 @@ echo "Components installed:"
 [[ -d "${INSTALL_DIR}/agents" ]] && echo "  - agents/"
 [[ -d "${INSTALL_DIR}/skills" ]] && echo "  - skills/"
 [[ -f "$HOME/bin/codeagent-wrapper" ]] && echo "  - ~/bin/codeagent-wrapper"
+
+# Install global npm packages
+echo ""
+echo "Installing global npm packages..."
+npm install -g @openai/codex || echo "WARNING: Failed to install @openai/codex"
+npm install -g @anthropic-ai/claude-code || echo "WARNING: Failed to install @anthropic-ai/claude-code"
+echo "Global npm packages installation completed."

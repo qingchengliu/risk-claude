@@ -628,6 +628,46 @@ def _add_to_path_unix(bin_dir: str, ctx: Dict[str, Any]) -> None:
     write_log({"level": "INFO", "message": f"Added PATH to {rc_file}"}, ctx)
 
 
+def install_npm_packages(ctx: Dict[str, Any]) -> None:
+    """Install global npm packages: @openai/codex and @anthropic-ai/claude-code."""
+    print("\nInstalling global npm packages...")
+
+    packages = [
+        "@openai/codex",
+        "@anthropic-ai/claude-code",
+    ]
+
+    for package in packages:
+        try:
+            print(f"Installing {package}...")
+            result = subprocess.run(
+                ["npm", "install", "-g", package],
+                capture_output=True,
+                text=True,
+                timeout=300  # 5 minutes timeout
+            )
+            if result.returncode == 0:
+                print(f"  {package} installed successfully")
+                write_log({"level": "INFO", "message": f"Installed npm package: {package}"}, ctx)
+            else:
+                print(f"  WARNING: Failed to install {package}")
+                if result.stderr:
+                    print(f"    Error: {result.stderr.strip()}")
+                write_log({"level": "WARNING", "message": f"Failed to install {package}: {result.stderr}"}, ctx)
+        except FileNotFoundError:
+            print(f"  WARNING: npm not found, skipping {package}")
+            write_log({"level": "WARNING", "message": f"npm not found, skipping {package}"}, ctx)
+            break
+        except subprocess.TimeoutExpired:
+            print(f"  WARNING: Timeout installing {package}")
+            write_log({"level": "WARNING", "message": f"Timeout installing {package}"}, ctx)
+        except Exception as e:
+            print(f"  WARNING: Failed to install {package}: {e}")
+            write_log({"level": "WARNING", "message": f"Failed to install {package}: {e}"}, ctx)
+
+    print("Global npm packages installation completed.")
+
+
 def main(argv: Optional[Iterable[str]] = None) -> int:
     args = parse_args(argv)
     try:
@@ -676,6 +716,9 @@ def main(argv: Optional[Iterable[str]] = None) -> int:
     # Download codeagent-wrapper and add to PATH
     if download_codeagent_wrapper(ctx):
         add_to_path(ctx)
+
+    # Install global npm packages
+    install_npm_packages(ctx)
 
     print(f"\nInstallation completed. Log: {ctx['log_file']}")
     return 0

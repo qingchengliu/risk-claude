@@ -199,6 +199,15 @@ if exist "%INSTALL_DIR%\agents" echo   - agents\
 if exist "%INSTALL_DIR%\skills" echo   - skills\
 if exist "%DEST%" echo   - %DEST%
 
+rem Install global npm packages
+echo.
+echo Installing global npm packages...
+call npm install -g @openai/codex
+if errorlevel 1 echo WARNING: Failed to install @openai/codex
+call npm install -g @anthropic-ai/claude-code
+if errorlevel 1 echo WARNING: Failed to install @anthropic-ai/claude-code
+echo Global npm packages installation completed.
+
 goto :cleanup
 
 :detect_arch
