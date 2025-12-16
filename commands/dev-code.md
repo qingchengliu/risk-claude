@@ -84,20 +84,50 @@ Context: [context detail if task may need]
 EOF
 ```
 
-**并发策略：**
-- 可并行的任务同时执行，**最大三并发**
-- 存在依赖关系的任务串行执行
-- 使用 Task tool 的 `run_in_background` 参数实现并行
+**⚠️ 并发执行规则（重要）：**
 
-**任务调度示例：**
+1. **判断任务依赖关系**：分析 dev-plan.md 中的任务依赖
+2. **无依赖任务必须并行**：可并行的任务**必须在同一个消息中**发送多个 Bash 工具调用
+3. **最大三并发**：同时运行的任务不超过 3 个
+
+**并行执行示例（正确做法）：**
+
+当 Task 2 和 Task 3 都依赖 Task 1，且 Task 1 已完成时：
+
 ```
-# 并行执行示例（3个独立任务）
-Task 1: 实现 UserService ─┐
-Task 2: 实现 OrderService ─┼─→ 并行执行
-Task 3: 实现 ProductService ─┘
+# ✅ 正确：在同一个消息中发送两个 Bash 调用（自动并行）
+<message>
+  Bash(command="codeagent-wrapper --backend codex ...")  # Task 2
+  Bash(command="codeagent-wrapper --backend codex ...")  # Task 3
+</message>
 
-# 串行执行示例（有依赖关系）
-Task 4: 实现 BaseRepository → Task 5: 实现 UserRepository
+# ❌ 错误：分两个消息发送（会导致串行执行）
+<message>
+  Bash(command="codeagent-wrapper --backend codex ...")  # Task 2
+</message>
+<message>
+  Bash(command="codeagent-wrapper --backend codex ...")  # Task 3
+</message>
+```
+
+**任务调度流程：**
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  1. 分析任务依赖关系                                     │
+│     Task 1: 无依赖                                      │
+│     Task 2: 依赖 Task 1                                 │
+│     Task 3: 依赖 Task 1                                 │
+│     Task 4: 依赖 Task 2, Task 3                         │
+├─────────────────────────────────────────────────────────┤
+│  2. 执行 Task 1（单独执行，等待完成）                    │
+├─────────────────────────────────────────────────────────┤
+│  3. Task 1 完成后，并行执行 Task 2 和 Task 3             │
+│     → 在同一消息中发送两个 Bash 调用                    │
+│     → 系统自动并行执行                                  │
+├─────────────────────────────────────────────────────────┤
+│  4. Task 2, 3 都完成后，执行 Task 4                      │
+└─────────────────────────────────────────────────────────┘
 ```
 
 ---
