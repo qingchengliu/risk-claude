@@ -632,6 +632,13 @@ def install_npm_packages(ctx: Dict[str, Any]) -> None:
     """Install global npm packages: @openai/codex and @anthropic-ai/claude-code."""
     print("\nInstalling global npm packages...")
 
+    # Check if npm is available
+    npm_cmd = "npm.cmd" if sys.platform == "win32" else "npm"
+    if not shutil.which(npm_cmd) and not shutil.which("npm"):
+        print("  WARNING: npm not found, skipping npm package installation")
+        write_log({"level": "WARNING", "message": "npm not found, skipping npm packages"}, ctx)
+        return
+
     packages = [
         "@openai/codex",
         "@anthropic-ai/claude-code",
@@ -641,7 +648,8 @@ def install_npm_packages(ctx: Dict[str, Any]) -> None:
         try:
             print(f"Installing {package}...")
             result = subprocess.run(
-                ["npm", "install", "-g", package],
+                f"npm install -g {package}",
+                shell=True,
                 capture_output=True,
                 text=True,
                 timeout=300  # 5 minutes timeout
@@ -654,10 +662,6 @@ def install_npm_packages(ctx: Dict[str, Any]) -> None:
                 if result.stderr:
                     print(f"    Error: {result.stderr.strip()}")
                 write_log({"level": "WARNING", "message": f"Failed to install {package}: {result.stderr}"}, ctx)
-        except FileNotFoundError:
-            print(f"  WARNING: npm not found, skipping {package}")
-            write_log({"level": "WARNING", "message": f"npm not found, skipping {package}"}, ctx)
-            break
         except subprocess.TimeoutExpired:
             print(f"  WARNING: Timeout installing {package}")
             write_log({"level": "WARNING", "message": f"Timeout installing {package}"}, ctx)
